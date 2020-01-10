@@ -1,3 +1,34 @@
+<?php
+//関連ファイルのインポート
+require_once ('./Message.php');
+require_once ('./env.php');
+
+if($_SERVER['REQUEST_METHOD']==="POST"){
+  //POSTリクエスト時の処理
+
+}else{
+  //GETリクエスト時の処理
+
+  //一覧表示用の配列を宣言
+  $message_list = array();
+  try{
+    //DBにアクセスして登録済データを投稿の新しい順に取得
+    $pdo = new PDO(DSN, DB_USER, DB_PASS);
+    $msgs = $pdo->query(
+      "SELECT * FROM messages ORDER BY id DESC"
+    );
+
+    //Messageオブジェクトに格納、配列に追加
+    foreach($msgs as $msg){
+      $message = new Message($msg['user_name'],$msg['user_email'],$msg['main'],$msg['created_at']);
+      array_push($message_list,$message);
+    }
+  }catch(PDOEXception $e){
+    print("DBに接続できませんでした。");
+    die();
+  }
+}
+?>
 <!doctype html>
 <html lang="ja">
 <head>
@@ -34,11 +65,15 @@
           </form>
         </div>
       </div>
+    <!--表示部分-->
     <div class="container">
+      <?php
+      foreach($message_list as $message){ ?>
         <div class="alert alert-primary" role="alert">
-           <p>投稿内容</p>
-           <p class="text-right">投稿者</p>
+           <p><?=$message->get_main() ?></p>
+           <p class="text-right"><?=$message->get_user_name() ?>(<?=$message->get_created_at()?>)</p>
         </div>
+      <?php } ?>
     </div>
 
 

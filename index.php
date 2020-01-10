@@ -34,6 +34,7 @@
           </form>
         </div>
       </div>
+     <!--表示部分-->  
     <div class="container">
         <div class="alert alert-primary" role="alert">
            <p>投稿内容</p>
