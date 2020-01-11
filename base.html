@@ -17,17 +17,17 @@
           <form method="POST">
             <div class="form-group">
               <label for="user_name">お名前</label>
-              <input type="text" class="form-control" id="user_name">
+              <input type="text" class="form-control" name="user_name" id="user_name">
               <small class="form-text text-muted">投稿者名を記入してください</small>
             </div>
             <div class="form-group">
                 <label for="user_email">メールアドレス</label>
-                <input type="email" class="form-control" id="user_email">
+                <input type="email" class="form-control" name="user_email" id="user_email">
                 <small class="form-text text-muted">投稿者のメールアドレスを記入してください</small>
               </div>
             <div class="form-group">
-              <label for="main_messag">メッセージ</label>
-              <textarea name="main" class="form-control" id="main_messag" rows="3"></textarea>
+              <label for="main">メッセージ</label>
+              <textarea name="main" class="form-control" id="main" rows="3"></textarea>
               <small class="form-text text-muted">メッセージ本文</small>
             </div>
             <button type="submit" class="btn btn-primary">投稿</button>

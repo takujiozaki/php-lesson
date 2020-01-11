@@ -6,6 +6,31 @@ require_once ('./env.php');
 if($_SERVER['REQUEST_METHOD']==="POST"){
   //POSTリクエスト時の処理
 
+  //POSTされたデータを取得
+  $user_name = htmlspecialchars($_POST['user_name']);
+  $user_email = htmlspecialchars($_POST['user_email']);
+  $main = htmlspecialchars($_POST['main']);
+
+  //データのチェック(バリデーション)
+    //次回の記事で紹介
+  //データベースに登録
+  try{
+    //DBに登録
+    $pdo = new PDO(DSN, DB_USER, DB_PASS);
+    $sql = 'INSERT INTO messages(user_name, user_email, main, created_at) values(:user_name, :user_email, :main, now())';
+    $stmt = $pdo->prepare($sql);
+    $stmt->bindValue(':user_name', $user_name, PDO::PARAM_STR);
+    $stmt->bindValue(':user_email', $user_email, PDO::PARAM_STR);
+    $stmt->bindValue(':main', $main, PDO::PARAM_STR);
+    $stmt->execute();
+  }catch(PDOEXception $e){
+    print("DBに接続できませんでした。");
+    die();
+  }
+  //リダイレクト
+  header('Location:'.$_SERVER['SCRIPT_NAME']);
+  exit();
+
 }else{
   //GETリクエスト時の処理
 
@@ -48,17 +73,17 @@ if($_SERVER['REQUEST_METHOD']==="POST"){
           <form method="POST">
             <div class="form-group">
               <label for="user_name">お名前</label>
-              <input type="text" class="form-control" id="user_name">
+              <input type="text" class="form-control" name="user_name" id="user_name">
               <small class="form-text text-muted">投稿者名を記入してください</small>
             </div>
             <div class="form-group">
                 <label for="user_email">メールアドレス</label>
-                <input type="email" class="form-control" id="user_email">
+                <input type="email" class="form-control" name="user_email" id="user_email">
                 <small class="form-text text-muted">投稿者のメールアドレスを記入してください</small>
               </div>
             <div class="form-group">
-              <label for="main_messag">メッセージ</label>
-              <textarea name="main" class="form-control" id="main_messag" rows="3"></textarea>
+              <label for="main">メッセージ</label>
+              <textarea name="main" class="form-control" id="main" rows="3"></textarea>
               <small class="form-text text-muted">メッセージ本文</small>
             </div>
             <button type="submit" class="btn btn-primary">投稿</button>
