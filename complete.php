@@ -1,7 +1,11 @@
 <?php
+//session開始
+session_start();
+
 //関連ファイルのインポート
 require_once ('./Message.php');
 require_once ('./env.php');
+require_once('vendor/autoload.php');
 
 if($_SERVER['REQUEST_METHOD']==="POST"){
   //POSTリクエスト時の処理
@@ -11,28 +15,62 @@ if($_SERVER['REQUEST_METHOD']==="POST"){
   $user_email = htmlspecialchars($_POST['user_email']);
   $main = htmlspecialchars($_POST['main']);
 
+  //バリデーション用の連想配列を定義
+  $data = ['user_name' => $user_name, 'user_email' => $user_email, 'main' => $main];
+
   //データのチェック(バリデーション)
-    //次回の記事で紹介
-  //データベースに登録
-  try{
-    //DBに登録
-    $pdo = new PDO(DSN, DB_USER, DB_PASS);
-    $sql = 'INSERT INTO messages(user_name, user_email, main, created_at) values(:user_name, :user_email, :main, now())';
-    $stmt = $pdo->prepare($sql);
-    $stmt->bindValue(':user_name', $user_name, PDO::PARAM_STR);
-    $stmt->bindValue(':user_email', $user_email, PDO::PARAM_STR);
-    $stmt->bindValue(':main', $main, PDO::PARAM_STR);
-    $stmt->execute();
-  }catch(PDOEXception $e){
-    print("DBに接続できませんでした。");
-    die();
+  $v = new Valitron\Validator($data);
+  $v->rule('required', ['user_name', 'user_email', 'main'])->message('{field}は必須です');
+  $v->rule('email', 'user_email')->message('{field}が不正です');
+  $v->labels(array(
+    'user_name' => '名前',
+    'user_email' => 'メールアドレス',
+    'main' => '本文'
+  ));
+  
+  //データに不備が無ければ
+  if($v->validate()) {
+
+    //データベースに登録
+    try{
+      //DBに登録
+      $pdo = new PDO(DSN, DB_USER, DB_PASS);
+      $sql = 'INSERT INTO messages(user_name, user_email, main, created_at) values(:user_name, :user_email, :main, now())';
+      $stmt = $pdo->prepare($sql);
+      $stmt->bindValue(':user_name', $user_name, PDO::PARAM_STR);
+      $stmt->bindValue(':user_email', $user_email, PDO::PARAM_STR);
+      $stmt->bindValue(':main', $main, PDO::PARAM_STR);
+      $stmt->execute();
+    }catch(PDOEXception $e){
+      print("DBに接続できませんでした。");
+      die();
+    }
+  } else {//不備があれば
+    //入力値とエラーメッセージをセッションに登録
+    $msg = new Message($user_name, $user_email, $main, '');
+    $_SESSION['inputMsg'] = serialize($msg);
+    $_SESSION['errorMsg'] = $v->errors();
   }
+
   //リダイレクト
   header('Location:'.$_SERVER['SCRIPT_NAME']);
   exit();
 
 }else{
   //GETリクエスト時の処理
+
+  //エラー表示
+  $user_name = '';
+  $user_email = '';
+  $main = '';
+
+  if(isset($_SESSION['inputMsg'])){
+    $inputMsg = unserialize($_SESSION['inputMsg']);
+    $user_name = $inputMsg->get_user_name();
+    $user_email =$inputMsg->get_user_email();
+    $main = $inputMsg->get_main();
+    unset($_SESSION['inputMsg']);
+  }
 
   //一覧表示用の配列を宣言
   $message_list = array();
@@ -65,25 +103,42 @@ if($_SERVER['REQUEST_METHOD']==="POST"){
     <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/css/bootstrap.min.css" integrity="sha384-Vkoo8x4CGsO3+Hhxv8T/Q5PaXtkKtu6ug5TOeNV6gBiFeWPGFN9MuhOf23Q9Ifjh" crossorigin="anonymous">
 
     <title>PHP伝言板</title>
+    <style>
+        .error{
+            color:red;
+        }
+    </style>
 </head>
 <body>
     <div class="jumbotron jumbotron-fluid">
         <div class="container">
           <h1 class="display-4">PHP Message Board</h1>
+          <?php
+                if(isset($_SESSION['errorMsg'])){
+                    foreach ($_SESSION['errorMsg'] as $error) {
+                        echo '<ul class="error">';
+                        foreach ($error as $value) {
+                            echo "<li>".$value."</li>";
+                        }
+                        echo "</ul>";
+                    }
+                    unset($_SESSION['errorMsg']);
+                }
+            ?>
           <form method="POST">
             <div class="form-group">
               <label for="user_name">お名前</label>
-              <input type="text" class="form-control" name="user_name" id="user_name">
+              <input type="text" class="form-control" name="user_name" id="user_name" value="<?=$user_name ?>">
               <small class="form-text text-muted">投稿者名を記入してください</small>
             </div>
             <div class="form-group">
                 <label for="user_email">メールアドレス</label>
-                <input type="email" class="form-control" name="user_email" id="user_email">
+                <input type="email" class="form-control" name="user_email" id="user_email" value="<?=$user_email ?>">
                 <small class="form-text text-muted">投稿者のメールアドレスを記入してください</small>
               </div>
             <div class="form-group">
               <label for="main">メッセージ</label>
-              <textarea name="main" class="form-control" id="main" rows="3"></textarea>
+              <textarea name="main" class="form-control" id="main" rows="3"><?=$main ?></textarea>
               <small class="form-text text-muted">メッセージ本文</small>
             </div>
             <button type="submit" class="btn btn-primary">投稿</button>
