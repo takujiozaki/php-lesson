@@ -14,7 +14,3 @@ PHPの基礎を学習済の前提です。
 - env.php DB設定ファイル
 - README.md 説明ファイル
 
-下記URLでプログラム構成を解説しています。  
-https://cafehedgehogs.com/php_tutorial
-
-
